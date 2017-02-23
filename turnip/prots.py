@@ -7,6 +7,14 @@ import pandas as pd
 import glob
 import re
 
+plotpar = {'axes.labelsize': 18,
+           'text.fontsize': 10,
+           'legend.fontsize': 18,
+           'xtick.labelsize': 18,
+           'ytick.labelsize': 18,
+           'text.usetex': True}
+plt.rcParams.update(plotpar)
+
 DATA_DIR = "/Users/ruthangus/projects/turnip/turnip/data/"
 
 def save_data(nbins):
@@ -43,17 +51,43 @@ def make_df():
 
     kois = []
     for i, k in enumerate(planets.kepoi_name.values):
-        kois.append(re.findall('\d+', planets.kepoi_name.values[i])[0])
+        # print(planets.kepoi_name.values[i])
+        # print(type(planets.kepoi_name.values[i]))
+        koi_str = re.findall('\d+', planets.kepoi_name.values[i])[0]
+        kois.append(int(koi_str))
     planets["koi"] = kois
     joint = pd.merge(planets, df, on="koi")
     joint.to_csv("planet_periods.csv")
 
 def plot_periods():
     df = pd.read_csv("planet_periods.csv")
+
+    m = np.log(df.period.values) > 1
+    lnporb = np.log(df.koi_period.values[m])
+    lnprot = np.log(df.period.values[m])
+    porb = df.koi_period.values[m]
+    prot = df.period.values[m]
+    radius = np.log(df.koi_prad.values[m])
+    teff = df.koi_steff.values[m]
+
     plt.clf()
-    print(df.period)
-    plt.plot(df.koi_period.values, df.period.values)
+    plt.scatter(porb, prot, s=5*radius, c=teff, vmin=4400, vmax=7000)
+    plt.loglog()
+    plt.colorbar()
+    plt.xlabel("$\ln(\mathrm{Orbital~period})$")
+    plt.ylabel("$\ln(\mathrm{Rotation~period})$")
+    plt.subplots_adjust(bottom=.15)
     plt.savefig("period_period")
+
+    find the short rotators
+    m = np.log(df.period.values) < 1
+    print(df.koi.values[m])
+    # import kplr
+    # client = kplr.API()
+    # for i, k in enumerate(df.koi.values[m]):
+    #     print(k)
+    #     star = client.koi("{}.01".format(k))
+    #     star.get_light_curves(fetch=True)
 
 
 if __name__ == "__main__":
