@@ -6,6 +6,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import glob
 import re
+from gyro import gyro_age
+import teff_bv as tbv
+import scipy.stats as sps
+# np.set_printoptions(threshold=np.nan, linewidth=9)
 
 plotpar = {'axes.labelsize': 18,
            'text.fontsize': 10,
@@ -16,6 +20,7 @@ plotpar = {'axes.labelsize': 18,
 plt.rcParams.update(plotpar)
 
 DATA_DIR = "/Users/ruthangus/projects/turnip/turnip/data/"
+
 
 def save_data(nbins):
 
@@ -59,6 +64,7 @@ def make_df():
     joint = pd.merge(planets, df, on="koi")
     joint.to_csv("planet_periods.csv")
 
+
 def plot_periods():
     df = pd.read_csv("planet_periods.csv")
 
@@ -79,7 +85,7 @@ def plot_periods():
     plt.subplots_adjust(bottom=.15)
     plt.savefig("period_period")
 
-    find the short rotators
+    # find the short rotators
     m = np.log(df.period.values) < 1
     print(df.koi.values[m])
     # import kplr
@@ -90,8 +96,77 @@ def plot_periods():
     #     star.get_light_curves(fetch=True)
 
 
+def plot_radii():
+    df = pd.read_csv("planet_periods.csv")
+
+    m = np.log(df.period.values) > 1
+    prot = df.period.values[m]
+    radius = np.log(df.koi_prad.values[m])
+    teff = df.koi_steff.values[m]
+    logg = df.koi_slogg.values[m]
+    feh = np.zeros(len(logg))
+    gyro = gyro_age(prot, teff, feh, logg)
+    age = gyro.barnes07("mh")
+
+    m = np.isfinite(age)
+
+    plt.clf()
+    plt.scatter(np.log(age[m]), np.log(radius[m]), c=teff[m], s=10, vmin=4400,
+                vmax=7000)
+    plt.colorbar()
+    plt.xlabel("$\ln(\mathrm{Age,~Gyr})$")
+    plt.ylabel("$\ln(\mathrm{Radius}, R_J)$")
+    plt.subplots_adjust(bottom=.15)
+    plt.savefig("age_radius")
+
+    l = age[m] < 3.295
+    print(len(radius[m][l]))
+    print(len(radius[m][~l]))
+    plt.clf()
+    plt.hist(radius[m][l], 50, normed=True, alpha=.5, label="young")
+    plt.hist(radius[m][~l], 40, normed=True, alpha=.5, label="old")
+    plt.legend()
+    plt.xlabel("Radius")
+    plt.savefig("radius_hist")
+    print(sps.ks_2samp(radius[m][l], radius[m][~l]))
+
+    cum_young = np.cumsum(radius[m][l]) / sum(radius[m][l])
+    cum_old = np.cumsum(radius[m][~l]) / sum(radius[m][~l])
+    plt.clf()
+    plt.plot(cum_young, label="young")
+    plt.plot(cum_old, label="old")
+    plt.savefig("radius_cdf")
+
+    # # print(np.unique(df.kepid.values[m]))
+    # for i in np.unique(df.kepid.values[m]):
+    #     print("KIC", str(int(i)).zfill(9))
+
+    n = radius[m][l] < .5
+    n2 = radius[m][~l] < .5
+    print(len(radius[m][l][n]))
+    print(len(radius[m][~l][n2]))
+    plt.clf()
+    plt.hist(radius[m][l][n], 50, normed=True, alpha=.5, label="young")
+    plt.hist(radius[m][~l][n2], 40, normed=True, alpha=.5, label="old")
+    plt.legend()
+    plt.xlabel("Radius")
+    plt.savefig("radius_hist_hj")
+    print(sps.ks_2samp(radius[m][l][n], radius[m][~l][n2]))
+
+    n = radius[m] < .5
+    plt.clf()
+    plt.scatter(np.log(age[m][n]), np.log(radius[m][n]), c=teff[m][n], s=10,
+                vmin=4400, vmax=7000)
+    plt.colorbar()
+    plt.xlabel("$\ln(\mathrm{Age,~Gyr})$")
+    plt.ylabel("$\ln(\mathrm{Radius}, R_J)$")
+    plt.subplots_adjust(bottom=.15)
+    plt.savefig("age_radius_hj")
+
+
 if __name__ == "__main__":
     # save_data(100)
     # make_histogram()
-    make_df()
-    plot_periods()
+    # make_df()
+    # plot_periods()
+    plot_radii()
