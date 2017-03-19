@@ -28,8 +28,8 @@ def calc_comp(kepid, period, radius):
     # Instantiate pipeline completeness class structure
     doit = kpu.kepler_single_comp_data()
     doit.id = kepid
-    doit.period_want = np.linspace(10.0, 700.0, 6000)
-    doit.rp_want = np.linspace(0.5, 2.5, 3000)
+    doit.period_want = np.array([period])
+    doit.rp_want = np.array([radius])
     doit.rstar = 0.98
     doit.logg = 4.44
     doit.deteffver = 2
@@ -43,24 +43,8 @@ def calc_comp(kepid, period, radius):
     doit.mesthresh = np.full_like(doit.pulsedurations,7.1)
 
     # Calculate completeness over the grid of periods and radii.
-    x1, x2 = kpu.kepler_single_comp(doit)
-    X, Y = np.meshgrid(doit.period_want, doit.rp_want)
-
-    # Select completeness for a given period and radius
-    target_p = find_nearest(doit.period_want, period)
-    target_r = find_nearest(doit.rp_want, radius)
-    mp = doit.period_want == target_p  # period size = (6000,)
-    mr = doit.rp_want == target_r  # radius size = (3000,)
-    ind_p = np.arange(len(doit.period_want))[mp]
-    ind_r = np.arange(len(doit.rp_want))[mr]
-    probdet, probtot = x1, x2  # shapes = (3000, 6000), (3000, 6000)
-    return probtot[ind_r, ind_p]
-
-
-def find_nearest(array, value):
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]
-
+    probdet, probtot = kpu.kepler_single_comp(doit)
+    return probtot[0][0]
 
 if __name__ == "__main__":
     print(calc_comp(10593626, 365.25, 1))
