@@ -48,3 +48,4 @@ def calc_comp(kepid, period, radius):
 
 if __name__ == "__main__":
     print(calc_comp(10593626, 365.25, 1))
+    print(calc_comp(10141213, 365.25, 1))

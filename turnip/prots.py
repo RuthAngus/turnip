@@ -9,6 +9,7 @@ import re
 from gyro import gyro_age
 import teff_bv as tbv
 import scipy.stats as sps
+from calc_completeness import calc_comp
 # np.set_printoptions(threshold=np.nan, linewidth=9)
 
 plotpar = {'axes.labelsize': 18,
@@ -164,9 +165,26 @@ def plot_radii():
     plt.savefig("age_radius_hj")
 
 
+def plot_completeness():
+    df = pd.read_csv("planet_periods.csv")
+    comp = np.zeros((len(df.kepid.values)))
+    print(df.kepid.values[:10])
+    for i, kepid in enumerate(df.kepid.values[:10]):
+        print(i, "of", len(df.kepid.values))
+        print("id = ", kepid)
+        comp[i] = calc_comp(kepid, 365.25, 1.)
+        print(comp[i])
+    df["probtot"] = comp
+
+    plt.clf()
+    plt.plot(comp[:10], df.period.values[:10], "k.")
+    plt.savefig("comp_vs_period")
+
+
 if __name__ == "__main__":
     # save_data(100)
     # make_histogram()
     # make_df()
     # plot_periods()
-    plot_radii()
+    # plot_radii()
+    plot_completeness()
