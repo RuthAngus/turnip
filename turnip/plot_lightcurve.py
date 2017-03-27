@@ -32,5 +32,12 @@ def plot(kepid):
 
 
 if __name__ == "__main__":
-    kepid = sys.argv[1]
-    plot(kepid)
+    # kepid = sys.argv[1]
+    # plot(kepid)
+
+    # Load list of all KIDs in ~/.kplr/data/lightcurves/
+    kics = np.genfromtxt("kics.txt", dtype=str).T
+    N = len(kics)
+    for i, kic in enumerate(kics):
+        print(kic, i, "of", N)
+        plot(kic)
